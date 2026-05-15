@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'hokuto-tensei-v1';
+const CACHE_NAME = 'hokuto-tensei-v2';
 
 // 必須キャッシュ（オフライン起動に必要）
 const MUST_CACHE = [
