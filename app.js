@@ -89,22 +89,53 @@ function markSynced(id) {
   });
 }
 
-// GASから取得したデータをマージ（idでユニーク化、墓標は除外）
-function mergeSessions(sessions) {
-  return new Promise((resolve, reject) => {
-    const tombstones = new Set(getTombstones());
-    const filtered = (sessions || []).filter((s) => !tombstones.has(s.id));
-    if (filtered.length === 0) { resolve(); return; }
+// 行データのバリデーション（スプシで値が空になっている行を除外するため）
+function isValidSession(s) {
+  if (!s || typeof s.id !== 'string' || !s.id) return false;
+  const fields = ['start_rotation', 'win_count', 'end_rotation', 'invest_coins', 'return_coins'];
+  return fields.every((f) => typeof s[f] === 'number' && isFinite(s[f]));
+}
+
+// GASの状態をローカルに反映する真の双方向同期
+// - GASに無いsyncedレコードはローカルから削除
+// - 墓標IDは取り込まない
+// - 値が壊れた行（空セル等）は無視
+async function reconcileSessions(remoteSessions) {
+  const tombstones  = new Set(getTombstones());
+  const validRemote = (remoteSessions || []).filter(isValidSession);
+  const remoteIds   = new Set(validRemote.map((s) => s.id));
+
+  // 1) ローカルにあってGASに無いsyncedレコードを削除
+  const local = await getAllSessions();
+  for (const s of local) {
+    if (s.synced && !remoteIds.has(s.id)) {
+      await deleteSession(s.id);
+    }
+  }
+
+  // 2) GASから来たデータを書き込み（墓標は除外）
+  const toWrite = validRemote.filter((s) => !tombstones.has(s.id));
+  if (toWrite.length === 0) return;
+  await new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    let pending = filtered.length;
-    filtered.forEach((s) => {
-      const record = { ...s, synced: true };
-      const req = store.put(record);
+    let pending = toWrite.length;
+    toWrite.forEach((s) => {
+      const req = store.put({ ...s, synced: true });
       req.onsuccess = () => { if (--pending === 0) resolve(); };
       req.onerror = () => reject(req.error);
     });
     tx.onerror = () => reject(tx.error);
+  });
+}
+
+// IndexedDB全削除
+function clearAllSessions() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const req = tx.objectStore(STORE_NAME).clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -333,7 +364,7 @@ async function syncFromGAS() {
     const res  = await fetch(`${GAS_URL}?secret=${SECRET_KEY}`);
     const data = await res.json();
     if (data.ok && Array.isArray(data.sessions)) {
-      await mergeSessions(data.sessions);
+      await reconcileSessions(data.sessions);
     }
   } catch (e) {
     console.warn('GAS GET失敗:', e);
@@ -378,6 +409,17 @@ async function syncPendingToGAS() {
   }
   const remaining = await getUnsyncedSessions();
   updateSyncStatus(remaining.length > 0 ? 'pending' : 'synced', remaining.length);
+}
+
+// === ローカルリセット ===
+async function resetLocalData() {
+  if (!confirm('ローカルキャッシュをすべて削除し、スプシから再取得します。\n\n未同期のデータがあれば失われます。本当に実行しますか？')) return;
+
+  await clearAllSessions();
+  localStorage.removeItem(TOMBSTONE_KEY);
+  await syncFromGAS();
+  await renderAnalytics();
+  showMessage('リセットしました', 'success');
 }
 
 // === 削除処理 ===
@@ -494,6 +536,9 @@ async function init() {
 
   // 削除ボタン
   document.getElementById('delete-latest-btn').addEventListener('click', deleteLatest);
+
+  // リセットボタン
+  document.getElementById('reset-btn').addEventListener('click', resetLocalData);
 
   // 手動再同期ボタン
   document.getElementById('sync-btn').addEventListener('click', async () => {

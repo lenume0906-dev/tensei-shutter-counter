@@ -400,6 +400,27 @@ main {
   padding: 28px 16px;
 }
 
+/* === リセットボタン（控えめなグレー） === */
+.reset-btn {
+  width: 100%;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-top: 28px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.reset-btn:active {
+  color: var(--text);
+  border-color: var(--text-sub);
+}
+
 /* === 削除ボタン === */
 .delete-btn {
   width: 100%;
