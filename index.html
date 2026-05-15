@@ -24,6 +24,7 @@
   <nav class="tab-bar" role="tablist">
     <button class="tab-btn active" data-tab="input" role="tab" aria-selected="true">入力</button>
     <button class="tab-btn" data-tab="analytics" role="tab" aria-selected="false">解析</button>
+    <button class="tab-btn" data-tab="shutter" role="tab" aria-selected="false">シャッター</button>
   </nav>
 
   <main>
@@ -85,6 +86,33 @@
         <button type="button" id="save-btn" class="save-btn">保存する</button>
         <div id="save-message" class="save-message" role="alert" aria-live="polite"></div>
       </form>
+    </div>
+
+    <!-- シャッタータブ -->
+    <div id="tab-shutter" class="tab-content" role="tabpanel">
+      <p class="shutter-desc">シャッター確認するあべし数</p>
+      <div class="shutter-list">
+        <div class="shutter-item">
+          <span class="shutter-index">①</span>
+          <span class="shutter-range">37 〜 45</span>
+        </div>
+        <div class="shutter-item">
+          <span class="shutter-index">②</span>
+          <span class="shutter-range">166 〜 173</span>
+        </div>
+        <div class="shutter-item">
+          <span class="shutter-index">③</span>
+          <span class="shutter-range">288 〜 300</span>
+        </div>
+        <div class="shutter-item">
+          <span class="shutter-index">④</span>
+          <span class="shutter-range">421 〜 429</span>
+        </div>
+        <div class="shutter-item">
+          <span class="shutter-index">⑤</span>
+          <span class="shutter-range">489 〜 495</span>
+        </div>
+      </div>
     </div>
 
     <!-- 解析タブ -->

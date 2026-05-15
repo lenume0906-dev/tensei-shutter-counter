@@ -399,3 +399,50 @@ main {
   text-align: center;
   padding: 28px 16px;
 }
+
+/* === シャッタータブ === */
+.shutter-desc {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 4px 0 18px;
+}
+
+.shutter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shutter-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 0 8px rgba(200, 16, 46, 0.06);
+}
+
+.shutter-index {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+  width: 26px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.shutter-range {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--positive);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+}
