@@ -97,7 +97,6 @@ GitHub リポジトリの **Settings → Pages → Source: main ブランチ** �
   "timestamp": "2026-05-16T14:30:00+09:00",
   "start_rotation": 100,
   "win_count": 5,
-  "abeshi_count": 2,
   "end_rotation": 1500,
   "invest_coins": 1000,
   "return_coins": 1800,

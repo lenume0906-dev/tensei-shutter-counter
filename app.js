@@ -108,7 +108,6 @@ function calcTotal(sessions) {
   if (!sessions || sessions.length === 0) return null;
   const totalRot    = sessions.reduce((a, s) => a + (s.end_rotation - s.start_rotation), 0);
   const totalWin    = sessions.reduce((a, s) => a + s.win_count, 0);
-  const totalAbeshi = sessions.reduce((a, s) => a + s.abeshi_count, 0);
   const totalInvest = sessions.reduce((a, s) => a + s.invest_coins, 0);
   const totalReturn = sessions.reduce((a, s) => a + s.return_coins, 0);
   const balance     = totalReturn - totalInvest;
@@ -117,7 +116,7 @@ function calcTotal(sessions) {
   const payout = totalRot > 0
     ? ((totalRot * 3 + totalReturn - totalInvest) / (totalRot * 3)) * 100
     : null;
-  return { count: sessions.length, totalRot, totalWin, totalAbeshi, balance, prob, payout };
+  return { count: sessions.length, totalRot, totalWin, balance, prob, payout };
 }
 
 // === フォーマット ===
@@ -170,7 +169,6 @@ function updatePreview() {
   const startRot    = parseInt(document.getElementById('start_rotation').value) || 0;
   const endRot      = parseInt(document.getElementById('end_rotation').value)   || 0;
   const winCount    = parseInt(document.getElementById('win_count').value)       || 0;
-  const abeshiCount = parseInt(document.getElementById('abeshi_count').value)    || 0;
   const investCoins = parseInt(document.getElementById('invest_coins').value)    || 0;
   const returnCoins = parseInt(document.getElementById('return_coins').value)    || 0;
 
@@ -195,7 +193,7 @@ function updatePreview() {
   payEl.className = `prev-value ${payoutClass(payout)}`;
 
   document.getElementById('prev-win').textContent =
-    winCount > 0 ? `${winCount}回 (${abeshiCount})` : '—';
+    winCount > 0 ? `${winCount}回` : '—';
 }
 
 // === 解析タブ描画 ===
@@ -226,7 +224,7 @@ async function renderAnalytics() {
     </div>
     <div class="stat-row">
       <span class="stat-label">当選回数</span>
-      <span class="stat-value">${latest.win_count}回<span class="sub-text">(あべし${latest.abeshi_count})</span></span>
+      <span class="stat-value">${latest.win_count}回</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">初当たり確率</span>
@@ -259,7 +257,7 @@ async function renderAnalytics() {
     </div>
     <div class="stat-row">
       <span class="stat-label">累計当選回数</span>
-      <span class="stat-value">${tot.totalWin}回<span class="sub-text">(あべし${tot.totalAbeshi})</span></span>
+      <span class="stat-value">${tot.totalWin}回</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">累計初当たり確率</span>
@@ -356,14 +354,13 @@ function showMessage(msg, type) {
 async function saveData() {
   const startRot    = parseInt(document.getElementById('start_rotation').value);
   const winCount    = parseInt(document.getElementById('win_count').value);
-  const abeshiCount = parseInt(document.getElementById('abeshi_count').value);
   const endRot      = parseInt(document.getElementById('end_rotation').value);
   const investCoins = parseInt(document.getElementById('invest_coins').value);
   const returnCoins = parseInt(document.getElementById('return_coins').value);
   const note        = document.getElementById('note').value.trim();
 
   // バリデーション
-  if ([startRot, winCount, abeshiCount, endRot, investCoins, returnCoins].some(isNaN)) {
+  if ([startRot, winCount, endRot, investCoins, returnCoins].some(isNaN)) {
     showMessage('すべての数値項目を入力してください', 'error');
     return;
   }
@@ -377,7 +374,7 @@ async function saveData() {
     timestamp:      new Date().toISOString(),
     start_rotation: startRot,
     win_count:      winCount,
-    abeshi_count:   abeshiCount,
+    abeshi_count:   0,
     end_rotation:   endRot,
     invest_coins:   investCoins,
     return_coins:   returnCoins,
