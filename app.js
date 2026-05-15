@@ -6,6 +6,21 @@ const SECRET_KEY = '16384';
 const DB_NAME = 'hokuto-tensei';
 const DB_VERSION = 1;
 const STORE_NAME = 'sessions';
+const TOMBSTONE_KEY = 'hokuto-tombstones';
+
+// === 墓標管理（localStorage）===
+// 削除済みIDを記録し、再同期で復活させないようにする
+function getTombstones() {
+  try { return JSON.parse(localStorage.getItem(TOMBSTONE_KEY)) || []; }
+  catch { return []; }
+}
+function addTombstone(id) {
+  const t = getTombstones();
+  if (!t.includes(id)) {
+    t.push(id);
+    localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(t));
+  }
+}
 
 // === IndexedDB ===
 let db = null;
@@ -74,23 +89,43 @@ function markSynced(id) {
   });
 }
 
-// GASから取得したデータをマージ（idでユニーク化、既存ローカルデータを上書きしない）
+// GASから取得したデータをマージ（idでユニーク化、墓標は除外）
 function mergeSessions(sessions) {
   return new Promise((resolve, reject) => {
-    if (!sessions || sessions.length === 0) { resolve(); return; }
+    const tombstones = new Set(getTombstones());
+    const filtered = (sessions || []).filter((s) => !tombstones.has(s.id));
+    if (filtered.length === 0) { resolve(); return; }
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    let pending = sessions.length;
-    sessions.forEach((s) => {
-      // GASから来たデータは synced:true として保存
+    let pending = filtered.length;
+    filtered.forEach((s) => {
       const record = { ...s, synced: true };
-      // 既存レコードがあれば上書き（getして確認してからputするとrace conditionになるので直接put）
       const req = store.put(record);
       req.onsuccess = () => { if (--pending === 0) resolve(); };
       req.onerror = () => reject(req.error);
     });
     tx.onerror = () => reject(tx.error);
   });
+}
+
+function deleteSession(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const req = tx.objectStore(STORE_NAME).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteFromGAS(id) {
+  const body = { secret: SECRET_KEY, action: 'delete', id };
+  const res  = await fetch(GAS_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body:    JSON.stringify(body),
+  });
+  const data = await res.json();
+  return data.ok === true;
 }
 
 // === 計算 ===
@@ -201,14 +236,17 @@ async function renderAnalytics() {
   const sessions = await getAllSessions();
   sessions.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-  const latestEl = document.getElementById('analytics-latest');
-  const totalEl  = document.getElementById('analytics-total');
+  const latestEl   = document.getElementById('analytics-latest');
+  const totalEl    = document.getElementById('analytics-total');
+  const deleteBtn  = document.getElementById('delete-latest-btn');
 
   if (sessions.length === 0) {
     latestEl.innerHTML = '<p class="no-data">データがありません</p>';
     totalEl.innerHTML  = '<p class="no-data">データがありません</p>';
+    deleteBtn.hidden = true;
     return;
   }
+  deleteBtn.hidden = false;
 
   // 最新セッション1件
   const latest = sessions[sessions.length - 1];
@@ -342,6 +380,32 @@ async function syncPendingToGAS() {
   updateSyncStatus(remaining.length > 0 ? 'pending' : 'synced', remaining.length);
 }
 
+// === 削除処理 ===
+async function deleteLatest() {
+  const sessions = await getAllSessions();
+  if (sessions.length === 0) return;
+  sessions.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const latest = sessions[sessions.length - 1];
+
+  const dt = new Date(latest.timestamp);
+  const dtStr = dt.toLocaleDateString('ja-JP') + ' ' + dt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+  if (!confirm(`直近のセッションを削除しますか？\n\n${dtStr}\nこの操作は取り消せません。`)) return;
+
+  // ローカル削除 + 墓標記録（GAS復活防止）
+  await deleteSession(latest.id);
+  addTombstone(latest.id);
+  await renderAnalytics();
+
+  // GAS側も削除を試みる（ベストエフォート、未対応でも墓標で復活はしない）
+  if (navigator.onLine) {
+    try {
+      await deleteFromGAS(latest.id);
+    } catch (e) {
+      console.warn('GAS削除失敗（ローカルは削除済み）:', e);
+    }
+  }
+}
+
 // === 保存処理 ===
 function showMessage(msg, type) {
   const el = document.getElementById('save-message');
@@ -427,6 +491,9 @@ async function init() {
 
   // 保存ボタン
   document.getElementById('save-btn').addEventListener('click', saveData);
+
+  // 削除ボタン
+  document.getElementById('delete-latest-btn').addEventListener('click', deleteLatest);
 
   // 手動再同期ボタン
   document.getElementById('sync-btn').addEventListener('click', async () => {
