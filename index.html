@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="転生">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+  <title>北斗転生カウンター</title>
+</head>
+<body>
+  <header>
+    <div class="app-title"><span class="title-accent">北斗</span>転生カウンター</div>
+    <div class="header-right">
+      <span id="sync-status" class="sync-status syncing">同期中...</span>
+      <button id="sync-btn" class="sync-btn" aria-label="再同期">↻</button>
+    </div>
+  </header>
+
+  <nav class="tab-bar" role="tablist">
+    <button class="tab-btn active" data-tab="input" role="tab" aria-selected="true">入力</button>
+    <button class="tab-btn" data-tab="analytics" role="tab" aria-selected="false">解析</button>
+  </nav>
+
+  <main>
+    <!-- 入力タブ -->
+    <div id="tab-input" class="tab-content active" role="tabpanel">
+      <form id="input-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="start_rotation">① 開始回転数 (G)</label>
+          <input class="form-input" type="number" id="start_rotation" inputmode="numeric" min="0" placeholder="例: 100">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="win_count">② 当選回数 (回)</label>
+          <input class="form-input" type="number" id="win_count" inputmode="numeric" min="0" placeholder="例: 5">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="abeshi_count">③ 当選あべし (回)</label>
+          <input class="form-input" type="number" id="abeshi_count" inputmode="numeric" min="0" placeholder="例: 2">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="end_rotation">④ 終了回転数 (G)</label>
+          <input class="form-input" type="number" id="end_rotation" inputmode="numeric" min="0" placeholder="例: 1500">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="invest_coins">⑤ 投資枚数 (枚)</label>
+          <input class="form-input" type="number" id="invest_coins" inputmode="numeric" min="0" placeholder="例: 1000">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="return_coins">⑥ 回収枚数 (枚)</label>
+          <input class="form-input" type="number" id="return_coins" inputmode="numeric" min="0" placeholder="例: 1800">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="note">メモ（任意）</label>
+          <input class="form-input text-input" type="text" id="note" placeholder="台番号・コメントなど">
+        </div>
+
+        <!-- リアルタイムプレビュー -->
+        <div class="preview-card" aria-label="今回分プレビュー">
+          <div class="preview-title">今回分プレビュー</div>
+          <div class="preview-grid">
+            <div class="preview-item">
+              <span class="preview-label">総回転数</span>
+              <span id="prev-rot" class="prev-value">—</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-label">当選 (あべし)</span>
+              <span id="prev-win" class="prev-value">—</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-label">収支</span>
+              <span id="prev-balance" class="prev-value">—</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-label">初当たり確率</span>
+              <span id="prev-prob" class="prev-value">—</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-label">機械割</span>
+              <span id="prev-payout" class="prev-value">—</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" id="save-btn" class="save-btn">保存する</button>
+        <div id="save-message" class="save-message" role="alert" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <!-- 解析タブ -->
+    <div id="tab-analytics" class="tab-content" role="tabpanel">
+      <div class="analytics-section">
+        <div class="section-header">
+          <span class="section-title">今回分</span>
+          <span class="section-badge">最新セッション</span>
+        </div>
+        <div id="analytics-latest" class="stat-card">
+          <p class="no-data">データがありません</p>
+        </div>
+      </div>
+
+      <div class="analytics-section">
+        <div class="section-header">
+          <span class="section-title">累計</span>
+        </div>
+        <div id="analytics-total" class="stat-card">
+          <p class="no-data">データがありません</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

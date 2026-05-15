@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>アイコン生成 — 北斗転生カウンター</title>
+  <style>
+    body {
+      background: #111;
+      color: #ccc;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 40px 20px;
+    }
+    h1 { color: #c8102e; font-size: 20px; }
+    p  { font-size: 13px; color: #888; text-align: center; max-width: 400px; }
+    .icon-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+    .icon-block { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    canvas { border: 1px solid #333; border-radius: 8px; }
+    a.dl-btn {
+      display: block;
+      background: #c8102e;
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    a.dl-btn:hover { background: #a00d24; }
+  </style>
+</head>
+<body>
+  <h1>アイコン生成ツール</h1>
+  <p>
+    下のボタンをタップしてPNGをダウンロードし、
+    <code>icons/</code> フォルダに配置してください。
+  </p>
+  <div class="icon-row" id="icon-row"></div>
+
+  <script>
+    function drawIcon(size) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      const cx = size / 2;
+      const cy = size / 2;
+
+      // 背景グラデーション
+      const bg = ctx.createRadialGradient(cx, cy * 0.6, 0, cx, cy, size * 0.7);
+      bg.addColorStop(0, '#1a0505');
+      bg.addColorStop(1, '#0a0a0a');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, size, size);
+
+      // 外枠（赤）
+      const margin = size * 0.06;
+      ctx.strokeStyle = '#c8102e';
+      ctx.lineWidth = size * 0.035;
+      ctx.strokeRect(margin, margin, size - margin * 2, size - margin * 2);
+
+      // 内枠（暗い赤）
+      const m2 = margin + size * 0.045;
+      ctx.strokeStyle = 'rgba(200,16,46,0.3)';
+      ctx.lineWidth = size * 0.015;
+      ctx.strokeRect(m2, m2, size - m2 * 2, size - m2 * 2);
+
+      // コーナー装飾
+      const cs = size * 0.12;
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = size * 0.03;
+      const corners = [
+        [margin, margin],
+        [size - margin, margin],
+        [margin, size - margin],
+        [size - margin, size - margin],
+      ];
+      corners.forEach(([x, y]) => {
+        const sx = x === margin ? 1 : -1;
+        const sy = y === margin ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(x + sx * cs, y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x, y + sy * cs);
+        ctx.stroke();
+      });
+
+      // 「北」文字（金色）
+      ctx.fillStyle = '#ffd700';
+      ctx.font = `900 ${size * 0.52}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // 文字に赤いグロー
+      ctx.shadowColor = 'rgba(200,16,46,0.8)';
+      ctx.shadowBlur = size * 0.08;
+      ctx.fillText('北', cx, cy + size * 0.02);
+      ctx.shadowBlur = 0;
+
+      // 下部小テキスト「転生」
+      ctx.fillStyle = 'rgba(255,215,0,0.6)';
+      ctx.font = `700 ${size * 0.12}px sans-serif`;
+      ctx.fillText('転生', cx, cy + size * 0.35);
+
+      return c;
+    }
+
+    const row = document.getElementById('icon-row');
+    [192, 512].forEach((size) => {
+      const canvas = drawIcon(size);
+      const block = document.createElement('div');
+      block.className = 'icon-block';
+
+      const label = document.createElement('span');
+      label.textContent = `${size}×${size}`;
+
+      const link = document.createElement('a');
+      link.className = 'dl-btn';
+      link.href = canvas.toDataURL('image/png');
+      link.download = `icon-${size}.png`;
+      link.textContent = `icon-${size}.png をダウンロード`;
+
+      block.appendChild(canvas);
+      block.appendChild(label);
+      block.appendChild(link);
+      row.appendChild(block);
+    });
+  </script>
+</body>
+</html>
